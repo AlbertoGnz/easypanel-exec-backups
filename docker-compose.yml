@@ -1,0 +1,9 @@
+services:
+  backupcontroller:
+    image: backupcontroller:latest
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    command: tail -f /dev/null
+    volumes:
+      - ./:/app
