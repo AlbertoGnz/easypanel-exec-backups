@@ -6,7 +6,8 @@ It iterates through your configured projects, identifies database services and a
 
 ## Features
 
-- **Scheduled Backups**: Configure a specific time (HH:MM) for backups to run daily.
+- **Scheduled Backups**: Configure specific intervals (daily or weekly) and times (HH:MM) for automatic backups.
+- **Timezone Support**: Set a custom timezone (e.g., `America/Sao_Paulo`) to trigger backups at the correct local time.
 - **Environment Variable Configuration**: Keep your credentials and project names secure and separate from the code.
 - **Full Support**: Backs up both **Database Services** and **General Application Services**.
 - **Multiple Project Support**: List all your Easypanel projects that need backup.
@@ -20,11 +21,15 @@ It iterates through your configured projects, identifies database services and a
     - `EASYPANEL_TOKEN`: Your personal access token for Easypanel API.
     - `EASYPANEL_PROJECTS`: A comma-separated list of project names (e.g., `project1,project2,project3`).
     - `BACKUP_TIME`: Time to trigger backups in `HH:MM` format (e.g., `03:00` for 3 AM).
+    - `TIMEZONE`: The timezone for the backup schedule (e.g., `UTC` or `America/Sao_Paulo`).
+    - `BACKUP_INTERVAL`: The frequency of backups (`daily` or `weekly`).
+    - `BACKUP_WEEKDAY`: If `weekly`, specify the day (e.g., `monday`, `sunday`).
 
 2.  **Dependencies**:
     - `requests`: To interact with the Easypanel API.
     - `python-dotenv`: To load configuration from `.env`.
     - `schedule`: To manage the backup timing.
+    - `pytz`: For reliable timezone handling.
 
 ## Installation
 
