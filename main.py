@@ -4,6 +4,8 @@ import json
 import urllib.parse
 import schedule
 import time
+from datetime import datetime
+import pytz
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -14,6 +16,16 @@ EASYPANEL_URL = os.getenv("EASYPANEL_URL", "https://easypanel.host.com.br/api")
 EASYPANEL_TOKEN = os.getenv("EASYPANEL_TOKEN", "")
 EASYPANEL_PROJECTS = os.getenv("EASYPANEL_PROJECTS", "").split(",")
 BACKUP_TIME = os.getenv("BACKUP_TIME", "00:00")
+TIMEZONE = os.getenv("TIMEZONE", "UTC")
+
+# Set system timezone for the process (Unix/Docker)
+if hasattr(time, 'tzset'):
+    os.environ['TZ'] = TIMEZONE
+    time.tzset()
+    print(f"INFO: System timezone set to {TIMEZONE}")
+else:
+    # On Windows, we will log the time in the target timezone manually
+    print(f"WARNING: time.tzset() not available on this platform. {TIMEZONE} will be reflected in logs using pytz.")
 
 # Note: This script executes database and general service backup actions for the limited free version of Easypanel.
 
@@ -126,7 +138,11 @@ def perform_backup_routine():
     Executes the full backup routine for all configured projects.
     """
     print("\n" + "="*60)
-    print(f"BACKUP ROUTINE STARTED - {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    try:
+        now_str = datetime.now(pytz.timezone(TIMEZONE)).strftime('%Y-%m-%d %H:%M:%S')
+    except:
+        now_str = time.strftime('%Y-%m-%d %H:%M:%S')
+    print(f"BACKUP ROUTINE STARTED - {now_str} ({TIMEZONE})")
     print("="*60)
     
     if not EASYPANEL_TOKEN or not EASYPANEL_PROJECTS or not EASYPANEL_PROJECTS[0]:
@@ -187,7 +203,11 @@ def perform_backup_routine():
             pass
 
     print("\n" + "="*60)
-    print(f"BACKUP ROUTINE FINISHED - {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    try:
+        now_str = datetime.now(pytz.timezone(TIMEZONE)).strftime('%Y-%m-%d %H:%M:%S')
+    except:
+        now_str = time.strftime('%Y-%m-%d %H:%M:%S')
+    print(f"BACKUP ROUTINE FINISHED - {now_str} ({TIMEZONE})")
     print(f"Summary: {projects_processed} projects processed, {backups_triggered} backups triggered.")
     print("="*60 + "\n")
 
