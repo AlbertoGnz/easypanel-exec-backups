@@ -7,6 +7,7 @@ It iterates through your configured projects, identifies database services and a
 ## Features
 
 - **Scheduled Backups**: Configure specific intervals (daily or weekly) and times (HH:MM) for automatic backups.
+- **Selective Backups**: Enable or disable database and service backups independently via `.env` flags.
 - **Timezone Support**: Set a custom timezone (e.g., `America/Sao_Paulo`) to trigger backups at the correct local time.
 - **Environment Variable Configuration**: Keep your credentials and project names secure and separate from the code.
 - **Full Support**: Backs up both **Database Services** and **General Application Services**.
@@ -24,6 +25,8 @@ It iterates through your configured projects, identifies database services and a
     - `TIMEZONE`: The timezone for the backup schedule (e.g., `UTC` or `America/Sao_Paulo`).
     - `BACKUP_INTERVAL`: The frequency of backups (`daily` or `weekly`).
     - `BACKUP_WEEKDAY`: If `weekly`, specify the day (e.g., `monday`, `sunday`).
+    - `ENABLE_DB_BACKUPS`: Set to `true` or `false` to enable/disable database backups.
+    - `ENABLE_APP_BACKUPS`: Set to `true` or `false` to enable/disable service/app backups.
 
 2.  **Dependencies**:
     - `requests`: To interact with the Easypanel API.
