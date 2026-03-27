@@ -65,4 +65,4 @@ docker-compose up --build -d
 ## Note
 
 This script is intended for users who need a workaround for the backup limitations in the Easypanel free version. Use responsibly and ensure your backups are being stored correctly in your configured storage locations.
-I'm not responsable for any damage caused by the use of this script.
+I'm not responsible for any damage caused by the use of this script.
