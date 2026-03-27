@@ -15,7 +15,7 @@ EASYPANEL_TOKEN = os.getenv("EASYPANEL_TOKEN", "")
 EASYPANEL_PROJECTS = os.getenv("EASYPANEL_PROJECTS", "").split(",")
 BACKUP_TIME = os.getenv("BACKUP_TIME", "00:00")
 
-# Note: This script executes database backup actions for the limited free version of Easypanel.
+# Note: This script executes database and general service backup actions for the limited free version of Easypanel.
 
 def inspect_project(project_name):
     """
@@ -36,7 +36,7 @@ def inspect_project(project_name):
                 services_count = len(data['result']['data']['json']['services'])
                 print(f"  [OK] Project {project_name} inspected. Found {services_count} services.")
             except:
-                print(f"  [OK] Project {project_name} inspected, but services structure is unusual.")
+                print(f"  [OK] Project {project_name} inspected.")
             return data
         else:
             print(f"  [ERROR] Inspecting project {project_name}: Status {response.status_code}")
@@ -49,7 +49,6 @@ def list_database_backups(project_name, service_name):
     """
     Lists backups for a specific database service.
     """
-    print(f"      --> Fetching backup configurations for service: {service_name}...")
     input_json = json.dumps({"json": {"projectName": project_name, "serviceName": service_name}})
     input_encoded = urllib.parse.quote(input_json)
     url = f"{EASYPANEL_URL}/trpc/databaseBackups.listDatabaseBackups?input={input_encoded}"
@@ -59,45 +58,68 @@ def list_database_backups(project_name, service_name):
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
-            data = response.json()
-            try:
-                backups_count = len(data['result']['data']['json'])
-                print(f"      [OK] Found {backups_count} backup configurations for {service_name}.")
-            except:
-                print(f"      [OK] Backup list fetched for {service_name}.")
-            return data
-        else:
-            print(f"      [ERROR] Listing backups for {service_name}: Status {response.status_code}")
-            return None
-    except Exception as e:
-        print(f"      [ERROR] Failed to list backups for {service_name}: {e}")
+            return response.json()
+        return None
+    except:
+        return None
+
+def list_service_backups(project_name, service_name):
+    """
+    Lists backups for a general application service (not a database).
+    """
+    input_json = json.dumps({"json": {"projectName": project_name, "serviceName": service_name}})
+    input_encoded = urllib.parse.quote(input_json)
+    url = f"{EASYPANEL_URL}/trpc/serviceBackups.listServiceBackups?input={input_encoded}"
+    headers = {
+        "Authorization": f"Bearer {EASYPANEL_TOKEN}"
+    }
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        return None
+    except:
         return None
 
 def run_database_backup(primary_domain_id, service_name):
     """
     Triggers a manual database backup.
     """
-    print(f"          --> Triggering backup action for {service_name} (ID: {primary_domain_id})...")
-    payload = json.dumps({
-        "json": {
-            "id": primary_domain_id
-        }
-    })
-        
+    print(f"          --> DB: Triggering backup for {service_name}...")
+    payload = json.dumps({"json": {"id": primary_domain_id}})
     headers = {
         "Authorization": f"Bearer {EASYPANEL_TOKEN}",
         "Content-Type": "application/json"
     }
-
     url = f"{EASYPANEL_URL}/trpc/databaseBackups.runDatabaseBackup"
     try:
         response = requests.post(url, headers=headers, data=payload)
         if response.status_code == 200:
-            print(f"          [SUCCESS] Backup triggered successfully for {service_name}.")
+            print(f"          [SUCCESS] DB: {service_name} backup triggered.")
         else:
-            print(f"          [FAILED] Trigger status {response.status_code} for {service_name}. Response: {response.text}")
+            print(f"          [FAILED] DB: {service_name} trigger status {response.status_code}.")
     except Exception as e:
-        print(f"          [ERROR] Request failed for {service_name}: {e}")
+        print(f"          [ERROR] DB: Request failed for {service_name}: {e}")
+
+def run_service_backup(primary_domain_id, service_name):
+    """
+    Triggers a manual general service backup.
+    """
+    print(f"          --> APP: Triggering backup for {service_name}...")
+    payload = json.dumps({"json": {"id": primary_domain_id}})
+    headers = {
+        "Authorization": f"Bearer {EASYPANEL_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    url = f"{EASYPANEL_URL}/trpc/serviceBackups.runServiceBackup"
+    try:
+        response = requests.post(url, headers=headers, data=payload)
+        if response.status_code == 200:
+            print(f"          [SUCCESS] APP: {service_name} backup triggered.")
+        else:
+            print(f"          [FAILED] APP: {service_name} trigger status {response.status_code}.")
+    except Exception as e:
+        print(f"          [ERROR] APP: Request failed for {service_name}: {e}")
 
 def perform_backup_routine():
     """
@@ -128,24 +150,38 @@ def perform_backup_routine():
         try:
             services = result['result']['data']['json']['services']
             for service in services:
-                # Retrieving backups for each service.
-                backups = list_database_backups(service['projectName'], service['name'])
-                if backups is None:
-                    continue
+                service_name = service['name']
+                print(f"      --> Checking backups for: {service_name}...")
                 
-                try:
-                    backup_list = backups['result']['data']['json']
-                    if len(backup_list) == 0:
-                        print(f"      [INFO] No backup configurations found for service {service['name']}.")
-                        continue
-                    
-                    for backup in backup_list:
-                        # Execute the backups.
-                        run_database_backup(backup['id'], service['name'])
-                        backups_triggered += 1
-                except (KeyError, TypeError) as e:
-                    print(f"      [ERROR] Could not parse backup list for {service['name']}: {e}")
-                    
+                # Check for Database Backups
+                db_backups = list_database_backups(project, service_name)
+                found_backups = False
+                
+                if db_backups:
+                    try:
+                        db_list = db_backups['result']['data']['json']
+                        for backup in db_list:
+                            run_database_backup(backup['id'], service_name)
+                            backups_triggered += 1
+                            found_backups = True
+                    except:
+                        pass
+                
+                # Check for Service (App) Backups
+                app_backups = list_service_backups(project, service_name)
+                if app_backups:
+                    try:
+                        app_list = app_backups['result']['data']['json']
+                        for backup in app_list:
+                            run_service_backup(backup['id'], service_name)
+                            backups_triggered += 1
+                            found_backups = True
+                    except:
+                        pass
+                
+                if not found_backups:
+                    print(f"      [INFO] No backup configurations found for {service_name} (in either DB or App).")
+                        
         except KeyError as e:
             print(f"  [ERROR] Error parsing service info for project {project}: {e}")
             pass
@@ -160,7 +196,7 @@ def main():
     Main entry point of the script, schedules the backup routine.
     """
     print("\n" + "!"*60)
-    print("EASYPANEL BACKUP SERVICE INITIALIZED")
+    print("EASYPANEL BACKUP SERVICE INITIALIZED (DB + APP)")
     print(f"Scheduled daily at: {BACKUP_TIME}")
     print(f"Targeting projects: {', '.join(EASYPANEL_PROJECTS)}")
     print("!"*60 + "\n")
@@ -172,7 +208,7 @@ def main():
 
     while True:
         schedule.run_pending()
-        time.sleep(30) # Check every 30 seconds
+        time.sleep(30)
 
 if __name__ == "__main__":
     main()

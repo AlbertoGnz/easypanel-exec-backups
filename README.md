@@ -1,13 +1,14 @@
 # Easypanel Database Backup Automation
 
-This script automates database backups for the Easypanel hosting platform, specifically targeting users of the free version which has limitations on automatic backups. 
+This script automates database and general application backups for the Easypanel hosting platform, specifically targeting users of the free version which has limitations on automatic backups. 
 
-It iterates through your configured projects, identifies database services, and triggers manual backup actions at a scheduled time every day.
+It iterates through your configured projects, identifies database services and application services, and triggers manual backup actions at a scheduled time every day.
 
 ## Features
 
 - **Scheduled Backups**: Configure a specific time (HH:MM) for backups to run daily.
 - **Environment Variable Configuration**: Keep your credentials and project names secure and separate from the code.
+- **Full Support**: Backs up both **Database Services** and **General Application Services**.
 - **Multiple Project Support**: List all your Easypanel projects that need backup.
 - **Docker Ready**: Easily deploy as a container.
 
