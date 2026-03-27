@@ -4,6 +4,9 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
-    command: tail -f /dev/null
+    container_name: easypanel-backup-agent
+    env_file:
+      - .env
+    restart: unless-stopped
     volumes:
       - ./:/app
