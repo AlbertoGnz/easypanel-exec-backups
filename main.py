@@ -17,6 +17,8 @@ EASYPANEL_TOKEN = os.getenv("EASYPANEL_TOKEN", "")
 EASYPANEL_PROJECTS = os.getenv("EASYPANEL_PROJECTS", "").split(",")
 BACKUP_TIME = os.getenv("BACKUP_TIME", "00:00")
 TIMEZONE = os.getenv("TIMEZONE", "UTC")
+BACKUP_INTERVAL = os.getenv("BACKUP_INTERVAL", "daily").lower()
+BACKUP_WEEKDAY = os.getenv("BACKUP_WEEKDAY", "monday").lower()
 
 # Set system timezone for the process (Unix/Docker)
 if hasattr(time, 'tzset'):
@@ -217,14 +219,41 @@ def main():
     """
     print("\n" + "!"*60)
     print("EASYPANEL BACKUP SERVICE INITIALIZED (DB + APP)")
-    print(f"Scheduled daily at: {BACKUP_TIME}")
+    print(f"Scheduled interval: {BACKUP_INTERVAL}")
+    if BACKUP_INTERVAL == "weekly":
+        print(f"Scheduled day: {BACKUP_WEEKDAY}")
+    print(f"Scheduled time: {BACKUP_TIME}")
+    print(f"Timezone: {TIMEZONE}")
     print(f"Targeting projects: {', '.join(EASYPANEL_PROJECTS)}")
     print("!"*60 + "\n")
     
     # Run once at startup to verify configuration (optional)
     # perform_backup_routine() 
 
-    schedule.every().day.at(BACKUP_TIME).do(perform_backup_routine)
+    # Choose scheduling strategy based on interval
+    if BACKUP_INTERVAL == "daily":
+        schedule.every().day.at(BACKUP_TIME).do(perform_backup_routine)
+    elif BACKUP_INTERVAL == "weekly":
+        if BACKUP_WEEKDAY == "monday":
+            schedule.every().monday.at(BACKUP_TIME).do(perform_backup_routine)
+        elif BACKUP_WEEKDAY == "tuesday":
+            schedule.every().tuesday.at(BACKUP_TIME).do(perform_backup_routine)
+        elif BACKUP_WEEKDAY == "wednesday":
+            schedule.every().wednesday.at(BACKUP_TIME).do(perform_backup_routine)
+        elif BACKUP_WEEKDAY == "thursday":
+            schedule.every().thursday.at(BACKUP_TIME).do(perform_backup_routine)
+        elif BACKUP_WEEKDAY == "friday":
+            schedule.every().friday.at(BACKUP_TIME).do(perform_backup_routine)
+        elif BACKUP_WEEKDAY == "saturday":
+            schedule.every().saturday.at(BACKUP_TIME).do(perform_backup_routine)
+        elif BACKUP_WEEKDAY == "sunday":
+            schedule.every().sunday.at(BACKUP_TIME).do(perform_backup_routine)
+        else:
+            print(f"[WARNING] Invalid BACKUP_WEEKDAY: {BACKUP_WEEKDAY}. Defaulting to Monday.")
+            schedule.every().monday.at(BACKUP_TIME).do(perform_backup_routine)
+    else:
+        print(f"[WARNING] Invalid BACKUP_INTERVAL: {BACKUP_INTERVAL}. Defaulting to Daily.")
+        schedule.every().day.at(BACKUP_TIME).do(perform_backup_routine)
 
     while True:
         schedule.run_pending()
